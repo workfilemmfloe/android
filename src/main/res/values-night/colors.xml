@@ -25,6 +25,8 @@
     <color name="disabled_text">#ff6F6F6F</color>
     <color name="secondary_text_color">#A5A5A5</color>
     <color name="list_divider_background">#222222</color>
+    <color name="disabled_button_background">#ff404040</color>
+    <color name="disabled_button_text">#ff7A7A7A</color>
 
     <!-- Colors -->
     <color name="dark">#ffffff</color>
