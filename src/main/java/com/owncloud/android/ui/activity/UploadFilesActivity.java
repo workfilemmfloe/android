@@ -96,18 +96,18 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
     private static final String WAIT_DIALOG_TAG = "WAIT";
 
     @Inject AppPreferences preferences;
-    private Account mAccountOnCreation;
-    private ArrayAdapter<String> mDirectories;
-    private boolean mLocalFolderPickerMode;
-    private boolean mSelectAll;
-    private DialogFragment mCurrentDialog;
-    private File mCurrentDir;
+    private Account accountOnCreation;
+    private ArrayAdapter<String> directories;
+    private boolean localFolderPickerMode;
+    private boolean selectAll;
+    private DialogFragment currentDialog;
+    private File currentDir;
     private int requestCode;
-    private LocalFileListFragment mFileListFragment;
+    private LocalFileListFragment fileListFragment;
     private LocalStoragePathPickerDialogFragment dialog;
     private UploadFilesLayoutBinding binding;
-    private Menu mOptionsMenu;
-    private SearchView mSearchView;
+    private Menu optionsMenu;
+    private SearchView searchView;
 
     /**
      * Helper to launch the UploadFilesActivity for which you would like a result when it finished. Your
@@ -132,47 +132,47 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
 
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-            mLocalFolderPickerMode = extras.getBoolean(KEY_LOCAL_FOLDER_PICKER_MODE, false);
+            localFolderPickerMode = extras.getBoolean(KEY_LOCAL_FOLDER_PICKER_MODE, false);
             requestCode = (int) extras.get(REQUEST_CODE_KEY);
         }
 
         if (savedInstanceState != null) {
-            mCurrentDir = new File(savedInstanceState.getString(UploadFilesActivity.KEY_DIRECTORY_PATH,
-                                                                Environment.getExternalStorageDirectory().getAbsolutePath()));
-            mSelectAll = savedInstanceState.getBoolean(UploadFilesActivity.KEY_ALL_SELECTED, false);
+            currentDir = new File(savedInstanceState.getString(UploadFilesActivity.KEY_DIRECTORY_PATH,
+                                                               Environment.getExternalStorageDirectory().getAbsolutePath()));
+            selectAll = savedInstanceState.getBoolean(UploadFilesActivity.KEY_ALL_SELECTED, false);
         } else {
             String lastUploadFrom = preferences.getUploadFromLocalLastPath();
 
             if (!lastUploadFrom.isEmpty()) {
-                mCurrentDir = new File(lastUploadFrom);
+                currentDir = new File(lastUploadFrom);
 
-                while (!mCurrentDir.exists()) {
-                    mCurrentDir = mCurrentDir.getParentFile();
+                while (!currentDir.exists()) {
+                    currentDir = currentDir.getParentFile();
                 }
             } else {
-                mCurrentDir = Environment.getExternalStorageDirectory();
+                currentDir = Environment.getExternalStorageDirectory();
             }
         }
 
-        mAccountOnCreation = getAccount();
+        accountOnCreation = getAccount();
 
         /// USER INTERFACE
 
         // Drop-down navigation
-        mDirectories = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item);
-        mDirectories.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        directories = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item);
+        directories.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         fillDirectoryDropdown();
 
         // Inflate and set the layout view
         binding = UploadFilesLayoutBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        if (mLocalFolderPickerMode) {
+        if (localFolderPickerMode) {
             binding.uploadOptions.setVisibility(View.GONE);
             binding.uploadFilesBtnUpload.setText(R.string.uploader_btn_alternative_text);
         }
 
-        mFileListFragment = (LocalFileListFragment) getSupportFragmentManager().findFragmentByTag("local_files_list");
+        fileListFragment = (LocalFileListFragment) getSupportFragmentManager().findFragmentByTag("local_files_list");
 
         // Set input controllers
         binding.uploadFilesBtnCancel.setTextColor(ThemeUtils.primaryColor(this, true));
@@ -207,14 +207,14 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
 
         if (actionBar != null) {
             actionBar.setHomeButtonEnabled(true);   // mandatory since Android ICS, according to the official documentation
-            actionBar.setDisplayHomeAsUpEnabled(mCurrentDir != null);
+            actionBar.setDisplayHomeAsUpEnabled(currentDir != null);
             actionBar.setDisplayShowTitleEnabled(false);
 
             ThemeToolbarUtils.tintBackButton(actionBar, this);
         }
 
         showToolbarSpinner();
-        mToolbarSpinner.setAdapter(mDirectories);
+        mToolbarSpinner.setAdapter(directories);
         mToolbarSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -237,12 +237,12 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
         });
 
         // wait dialog
-        if (mCurrentDialog != null) {
-            mCurrentDialog.dismiss();
-            mCurrentDialog = null;
+        if (currentDialog != null) {
+            currentDialog.dismiss();
+            currentDialog = null;
         }
 
-        checkWritableFolder(mCurrentDir);
+        checkWritableFolder(currentDir);
 
         Log_OC.d(TAG, "onCreate() end");
     }
@@ -252,31 +252,31 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
     }
 
     private void fillDirectoryDropdown() {
-        File currentDir = mCurrentDir;
+        File currentDir = this.currentDir;
         while (currentDir != null && currentDir.getParentFile() != null) {
-            mDirectories.add(currentDir.getName());
+            directories.add(currentDir.getName());
             currentDir = currentDir.getParentFile();
         }
-        mDirectories.add(File.separator);
+        directories.add(File.separator);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        mOptionsMenu = menu;
+        optionsMenu = menu;
         getMenuInflater().inflate(R.menu.activity_upload_files, menu);
 
-        if (!mLocalFolderPickerMode) {
+        if (!localFolderPickerMode) {
             MenuItem selectAll = menu.findItem(R.id.action_select_all);
-            setSelectAllMenuItem(selectAll, mSelectAll);
+            setSelectAllMenuItem(selectAll, this.selectAll);
         }
 
         int fontColor = ThemeColorUtils.appBarPrimaryFontColor(this);
         final MenuItem item = menu.findItem(R.id.action_search);
-        mSearchView = (SearchView) MenuItemCompat.getActionView(item);
-        ThemeToolbarUtils.themeSearchView(mSearchView, this);
+        searchView = (SearchView) MenuItemCompat.getActionView(item);
+        ThemeToolbarUtils.themeSearchView(searchView, this);
         ThemeDrawableUtils.tintDrawable(menu.findItem(R.id.action_choose_storage_path).getIcon(), fontColor);
 
-        mSearchView.setOnSearchClickListener(v -> mToolbarSpinner.setVisibility(View.GONE));
+        searchView.setOnSearchClickListener(v -> mToolbarSpinner.setVisibility(View.GONE));
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -286,14 +286,14 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
         boolean retval = true;
         int itemId = item.getItemId();
         if (itemId == android.R.id.home) {
-            if (mCurrentDir != null && mCurrentDir.getParentFile() != null) {
+            if (currentDir != null && currentDir.getParentFile() != null) {
                 onBackPressed();
             }
         } else if (itemId == R.id.action_select_all) {
             item.setChecked(!item.isChecked());
-            mSelectAll = item.isChecked();
-            setSelectAllMenuItem(item, mSelectAll);
-            mFileListFragment.selectAllFiles(item.isChecked());
+            selectAll = item.isChecked();
+            setSelectAllMenuItem(item, selectAll);
+            fileListFragment.selectAllFiles(item.isChecked());
         } else if (itemId == R.id.action_choose_storage_path) {
             showLocalStoragePathPickerDialog();
         } else {
@@ -313,43 +313,43 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
     @Override
     public void onSortingOrderChosen(FileSortOrder selection) {
         preferences.setSortOrder(FileSortOrder.Type.uploadFilesView, selection);
-        mFileListFragment.sortFiles(selection);
+        fileListFragment.sortFiles(selection);
     }
 
     private boolean isSearchOpen() {
-        if (mSearchView == null) {
+        if (searchView == null) {
             return false;
         } else {
-            View mSearchEditFrame = mSearchView.findViewById(androidx.appcompat.R.id.search_edit_frame);
+            View mSearchEditFrame = searchView.findViewById(androidx.appcompat.R.id.search_edit_frame);
             return mSearchEditFrame != null && mSearchEditFrame.getVisibility() == View.VISIBLE;
         }
     }
 
     @Override
     public void onBackPressed() {
-        if (isSearchOpen() && mSearchView != null) {
-            mSearchView.setQuery("", false);
-            mFileListFragment.onClose();
-            mSearchView.onActionViewCollapsed();
+        if (isSearchOpen() && searchView != null) {
+            searchView.setQuery("", false);
+            fileListFragment.onClose();
+            searchView.onActionViewCollapsed();
             setDrawerIndicatorEnabled(isDrawerIndicatorAvailable());
         } else {
-            if (mDirectories.getCount() <= SINGLE_DIR) {
+            if (directories.getCount() <= SINGLE_DIR) {
                 finish();
                 return;
             }
 
-            File parentFolder = mCurrentDir.getParentFile();
+            File parentFolder = currentDir.getParentFile();
             if (!parentFolder.canRead()) {
                 showLocalStoragePathPickerDialog();
                 return;
             }
 
             popDirname();
-            mFileListFragment.onNavigateUp();
-            mCurrentDir = mFileListFragment.getCurrentDirectory();
-            checkWritableFolder(mCurrentDir);
+            fileListFragment.onNavigateUp();
+            currentDir = fileListFragment.getCurrentDirectory();
+            checkWritableFolder(currentDir);
 
-            if (mCurrentDir.getParentFile() == null) {
+            if (currentDir.getParentFile() == null) {
                 ActionBar actionBar = getSupportActionBar();
                 if (actionBar != null) {
                     actionBar.setDisplayHomeAsUpEnabled(false);
@@ -357,8 +357,8 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
             }
 
             // invalidate checked state when navigating directories
-            if (!mLocalFolderPickerMode) {
-                setSelectAllMenuItem(mOptionsMenu.findItem(R.id.action_select_all), false);
+            if (!localFolderPickerMode) {
+                setSelectAllMenuItem(optionsMenu.findItem(R.id.action_select_all), false);
             }
         }
     }
@@ -369,9 +369,9 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
         // onRestoreInstanceState when there are Fragments involved
         Log_OC.d(TAG, "onSaveInstanceState() start");
         super.onSaveInstanceState(outState);
-        outState.putString(UploadFilesActivity.KEY_DIRECTORY_PATH, mCurrentDir.getAbsolutePath());
-        if (mOptionsMenu != null && mOptionsMenu.findItem(R.id.action_select_all) != null) {
-            outState.putBoolean(UploadFilesActivity.KEY_ALL_SELECTED, mOptionsMenu.findItem(R.id.action_select_all).isChecked());
+        outState.putString(UploadFilesActivity.KEY_DIRECTORY_PATH, currentDir.getAbsolutePath());
+        if (optionsMenu != null && optionsMenu.findItem(R.id.action_select_all) != null) {
+            outState.putBoolean(UploadFilesActivity.KEY_ALL_SELECTED, optionsMenu.findItem(R.id.action_select_all).isChecked());
         } else {
             outState.putBoolean(UploadFilesActivity.KEY_ALL_SELECTED, false);
         }
@@ -388,9 +388,9 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
         if (!directory.isDirectory()) {
             throw new IllegalArgumentException("Only directories may be pushed!");
         }
-        mDirectories.insert(directory.getName(), 0);
-        mCurrentDir = directory;
-        checkWritableFolder(mCurrentDir);
+        directories.insert(directory.getName(), 0);
+        currentDir = directory;
+        checkWritableFolder(currentDir);
     }
 
     /**
@@ -399,8 +399,8 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
      * @return True, unless the stack is empty
      */
     public boolean popDirname() {
-        mDirectories.remove(mDirectories.getItem(0));
-        return !mDirectories.isEmpty();
+        directories.remove(directories.getItem(0));
+        return !directories.isEmpty();
     }
 
     private void setSelectAllMenuItem(MenuItem selectAll, boolean checked) {
@@ -416,8 +416,8 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
     @Override
     public void onCheckAvailableSpaceStart() {
         if (requestCode == FileDisplayActivity.REQUEST_CODE__SELECT_FILES_FROM_FILE_SYSTEM) {
-            mCurrentDialog = IndeterminateProgressDialog.newInstance(R.string.wait_a_moment, false);
-            mCurrentDialog.show(getSupportFragmentManager(), WAIT_DIALOG_TAG);
+            currentDialog = IndeterminateProgressDialog.newInstance(R.string.wait_a_moment, false);
+            currentDialog.show(getSupportFragmentManager(), WAIT_DIALOG_TAG);
         }
     }
 
@@ -429,9 +429,9 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
      */
     @Override
     public void onCheckAvailableSpaceFinish(boolean hasEnoughSpaceAvailable, String... filesToUpload) {
-        if (mCurrentDialog != null) {
-            mCurrentDialog.dismiss();
-            mCurrentDialog = null;
+        if (currentDialog != null) {
+            currentDialog.dismiss();
+            currentDialog = null;
         }
 
         if (hasEnoughSpaceAvailable) {
@@ -444,7 +444,7 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
 
                 preferences.setUploaderBehaviour(FileUploader.LOCAL_BEHAVIOUR_DELETE);
             } else {
-                data.putExtra(EXTRA_CHOSEN_FILES, mFileListFragment.getCheckedFilePaths());
+                data.putExtra(EXTRA_CHOSEN_FILES, fileListFragment.getCheckedFilePaths());
                 data.putExtra(LOCAL_BASE_PATH, mCurrentDir.getAbsolutePath());
 
                 // set result code
@@ -491,8 +491,8 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
             ((LocalFileListFragment) getListOfFilesFragment()).listDirectory(file);
             onDirectoryClick(file);
 
-            mCurrentDir = new File(path);
-            mDirectories.clear();
+            currentDir = new File(path);
+            directories.clear();
 
             fillDirectoryDropdown();
         }
@@ -503,9 +503,9 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
      */
     @Override
     public void onDirectoryClick(File directory) {
-        if (!mLocalFolderPickerMode) {
+        if (!localFolderPickerMode) {
             // invalidate checked state when navigating directories
-            MenuItem selectAll = mOptionsMenu.findItem(R.id.action_select_all);
+            MenuItem selectAll = optionsMenu.findItem(R.id.action_select_all);
             setSelectAllMenuItem(selectAll, false);
         }
 
@@ -538,7 +538,7 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
      */
     @Override
     public void onFileClick(File file) {
-        binding.uploadFilesBtnUpload.setEnabled(mFileListFragment.getCheckedFilesCount() > 0);
+        binding.uploadFilesBtnUpload.setEnabled(fileListFragment.getCheckedFilesCount() > 0);
     }
 
     /**
@@ -546,7 +546,7 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
      */
     @Override
     public File getInitialDirectory() {
-        return mCurrentDir;
+        return currentDir;
     }
 
     /**
@@ -554,7 +554,7 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
      */
     @Override
     public boolean isFolderPickerMode() {
-        return mLocalFolderPickerMode;
+        return localFolderPickerMode;
     }
 
     /**
@@ -570,19 +570,19 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
             finish();
 
         } else if (v.getId() == R.id.upload_files_btn_upload) {
-            if (mCurrentDir != null) {
-                preferences.setUploadFromLocalLastPath(mCurrentDir.getAbsolutePath());
+            if (currentDir != null) {
+                preferences.setUploadFromLocalLastPath(currentDir.getAbsolutePath());
             }
-            if (mLocalFolderPickerMode) {
+            if (localFolderPickerMode) {
                 Intent data = new Intent();
-                if (mCurrentDir != null) {
-                    data.putExtra(EXTRA_CHOSEN_FILES, mCurrentDir.getAbsolutePath());
+                if (currentDir != null) {
+                    data.putExtra(EXTRA_CHOSEN_FILES, currentDir.getAbsolutePath());
                 }
                 setResult(RESULT_OK, data);
 
                 finish();
             } else {
-                new CheckAvailableSpaceTask(this, mFileListFragment.getCheckedFilePaths())
+                new CheckAvailableSpaceTask(this, fileListFragment.getCheckedFilePaths())
                     .execute(binding.uploadFilesSpinnerBehaviour.getSelectedItemPosition() == 0);
             }
         }
@@ -595,7 +595,7 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
             // return the list of selected files to the caller activity (success),
             // signaling that they should be moved to the ownCloud folder, instead of copied
             Intent data = new Intent();
-            data.putExtra(EXTRA_CHOSEN_FILES, mFileListFragment.getCheckedFilePaths());
+            data.putExtra(EXTRA_CHOSEN_FILES, fileListFragment.getCheckedFilePaths());
             setResult(RESULT_OK_AND_MOVE, data);
             finish();
         }
@@ -616,7 +616,7 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
     protected void onStart() {
         super.onStart();
         if (getAccount() != null) {
-            if (!mAccountOnCreation.equals(getAccount())) {
+            if (!accountOnCreation.equals(getAccount())) {
                 setResult(RESULT_CANCELED);
                 finish();
             }
@@ -632,11 +632,11 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
     }
 
     private ExtendedListFragment getListOfFilesFragment() {
-        if (mFileListFragment == null) {
+        if (fileListFragment == null) {
             Log_OC.e(TAG, "Access to unexisting list of files fragment!!");
         }
 
-        return mFileListFragment;
+        return fileListFragment;
     }
 
     @Override
