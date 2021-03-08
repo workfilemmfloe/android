@@ -48,11 +48,12 @@ import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
+import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.nextcloud.client.account.User;
 import com.nextcloud.client.account.UserAccountManager;
 import com.nextcloud.client.device.DeviceInfo;
 import com.nextcloud.client.di.Injectable;
-import com.nextcloud.client.media.ErrorFormat;
 import com.nextcloud.client.media.PlayerServiceConnection;
 import com.nextcloud.client.network.ClientFactory;
 import com.owncloud.android.R;
@@ -115,6 +116,7 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
     @Inject DeviceInfo deviceInfo;
     FragmentPreviewMediaBinding binding;
     LinearLayout emptyListView;
+    private SimpleExoPlayer exoPlayer;
 
     /**
      * Creates a fragment to preview a file.
@@ -176,27 +178,27 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
         binding = FragmentPreviewMediaBinding.inflate(inflater, container, false);
         View view = binding.getRoot();
 
-        emptyListView = binding.emptyView.emptyListView;
+//        emptyListView = binding.emptyView.emptyListView;
 
-        binding.videoPreview.setOnTouchListener(this);
+//        binding.videoPreview.setOnTouchListener(this);
 
         setLoadingView();
         return view;
     }
 
     private void setLoadingView() {
-        binding.progress.setVisibility(View.VISIBLE);
-        binding.emptyView.emptyListView.setVisibility(View.GONE);
+//        binding.progress.setVisibility(View.VISIBLE);
+//        binding.emptyView.emptyListView.setVisibility(View.GONE);
     }
 
     private void setVideoErrorMessage(String headline, @StringRes int message) {
-        binding.emptyView.emptyListViewHeadline.setText(headline);
-        binding.emptyView.emptyListViewText.setText(message);
-        binding.emptyView.emptyListIcon.setImageResource(R.drawable.file_movie);
-        binding.emptyView.emptyListViewText.setVisibility(View.VISIBLE);
-        binding.emptyView.emptyListIcon.setVisibility(View.VISIBLE);
-        binding.progress.setVisibility(View.GONE);
-        binding.emptyView.emptyListView.setVisibility(View.VISIBLE);
+//        binding.emptyView.emptyListViewHeadline.setText(headline);
+//        binding.emptyView.emptyListViewText.setText(message);
+//        binding.emptyView.emptyListIcon.setImageResource(R.drawable.file_movie);
+//        binding.emptyView.emptyListViewText.setVisibility(View.VISIBLE);
+//        binding.emptyView.emptyListIcon.setVisibility(View.VISIBLE);
+////        binding.progress.setVisibility(View.GONE);
+//        binding.emptyView.emptyListView.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -222,12 +224,12 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
 
         if (file != null) {
             if (MimeTypeUtil.isVideo(file)) {
-                binding.videoPreview.setVisibility(View.VISIBLE);
-                binding.imagePreview.setVisibility(View.GONE);
+                binding.exoplayerView.setVisibility(View.VISIBLE);
+//                binding.imagePreview.setVisibility(View.GONE);
                 prepareVideo();
             } else {
-                binding.videoPreview.setVisibility(View.GONE);
-                binding.imagePreview.setVisibility(View.VISIBLE);
+                binding.exoplayerView.setVisibility(View.GONE);
+//                binding.imagePreview.setVisibility(View.VISIBLE);
                 extractAndSetCoverArt(file);
             }
         }
@@ -247,12 +249,12 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
                 byte[] data = mmr.getEmbeddedPicture();
                 if (data != null) {
                     Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-                    binding.imagePreview.setImageBitmap(bitmap); //associated cover art in bitmap
+//                    binding.imagePreview.setImageBitmap(bitmap); //associated cover art in bitmap
                 } else {
-                    binding.imagePreview.setImageResource(R.drawable.logo);
+//                    binding.imagePreview.setImageResource(R.drawable.logo);
                 }
             } catch (Throwable t) {
-                binding.imagePreview.setImageResource(R.drawable.logo);
+//                binding.imagePreview.setImageResource(R.drawable.logo);
             }
         }
     }
@@ -266,12 +268,12 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
         outState.putParcelable(EXTRA_USER, user);
 
         if (MimeTypeUtil.isVideo(getFile())) {
-            if (binding.videoPreview != null) {
-                savedPlaybackPosition = binding.videoPreview.getCurrentPosition();
-                autoplay = binding.videoPreview.isPlaying();
-                outState.putInt(EXTRA_PLAY_POSITION, savedPlaybackPosition);
-                outState.putBoolean(EXTRA_PLAYING, autoplay);
-            }
+//            if (binding.videoPreview != null) {
+//                savedPlaybackPosition = binding.videoPreview.getCurrentPosition();
+//                autoplay = binding.videoPreview.isPlaying();
+//                outState.putInt(EXTRA_PLAY_POSITION, savedPlaybackPosition);
+//                outState.putBoolean(EXTRA_PLAYING, autoplay);
+//            }
         } else if(mediaPlayerServiceConnection.isConnected()) {
             outState.putInt(EXTRA_PLAY_POSITION, mediaPlayerServiceConnection.getCurrentPosition());
             outState.putBoolean(EXTRA_PLAYING, mediaPlayerServiceConnection.isPlaying());
@@ -287,12 +289,15 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
             // bind to any existing player
             mediaPlayerServiceConnection.bind();
 
+            exoPlayer = new SimpleExoPlayer.Builder(getContext()).build();
+            binding.exoplayerView.setPlayer(exoPlayer);
+
             if (MimeTypeUtil.isAudio(file)) {
-                binding.mediaController.setMediaPlayer(mediaPlayerServiceConnection);
+//                binding.mediaController.setMediaPlayer(mediaPlayerServiceConnection);
                 mediaPlayerServiceConnection.start(user, file, autoplay, savedPlaybackPosition);
-                binding.emptyView.emptyListView.setVisibility(View.GONE);
-                binding.progress.setVisibility(View.GONE);
-                binding.filePreviewContainer.setVisibility(View.VISIBLE);
+//                binding.emptyView.emptyListView.setVisibility(View.GONE);
+//                binding.progress.setVisibility(View.GONE);
+//                binding.filePreviewContainer.setVisibility(View.VISIBLE);
             } else if (MimeTypeUtil.isVideo(file)) {
                 if (mediaPlayerServiceConnection.isConnected()) {
                     // always stop player
@@ -430,19 +435,23 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
     private void prepareVideo() {
         // create helper to get more control on the playback
         VideoHelper videoHelper = new VideoHelper();
-        binding.videoPreview.setOnPreparedListener(videoHelper);
-        binding.videoPreview.setOnCompletionListener(videoHelper);
-        binding.videoPreview.setOnErrorListener(videoHelper);
+//        binding.videoPreview.setOnPreparedListener(videoHelper);
+//        binding.videoPreview.setOnCompletionListener(videoHelper);
+//        binding.videoPreview.setOnErrorListener(videoHelper);
     }
 
     private void playVideo() {
         // create and prepare control panel for the user
-        binding.mediaController.setMediaPlayer(binding.videoPreview);
+//        binding.mediaController.setMediaPlayer(binding.videoPreview);
 
         // load the video file in the video player
         // when done, VideoHelper#onPrepared() will be called
         if (getFile().isDown()) {
-            binding.videoPreview.setVideoURI(getFile().getStorageUri());
+//            binding.progress.setVisibility(View.GONE);
+
+            exoPlayer.addMediaItem(MediaItem.fromUri(getFile().getStorageUri()));
+            exoPlayer.prepare();
+            exoPlayer.play();
         } else {
             try {
                 OwnCloudClient client = clientFactory.create(user);
@@ -482,7 +491,12 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
             if (previewMediaFragment != null && context != null) {
                 if (uri != null) {
                     previewMediaFragment.videoUri = uri;
-                    previewMediaFragment.binding.videoPreview.setVideoURI(uri);
+
+//                    previewMediaFragment.binding.progress.setVisibility(View.GONE);
+
+                    previewMediaFragment.exoPlayer.addMediaItem(MediaItem.fromUri(uri));
+                    previewMediaFragment.exoPlayer.prepare();
+                    previewMediaFragment.exoPlayer.play();
                 } else {
                     previewMediaFragment.emptyListView.setVisibility(View.VISIBLE);
                     previewMediaFragment.setVideoErrorMessage(
@@ -507,15 +521,15 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
         @Override
         public void onPrepared(MediaPlayer vp) {
             Log_OC.v(TAG, "onPrepared");
-            binding.emptyView.emptyListView.setVisibility(View.GONE);
-            binding.progress.setVisibility(View.GONE);
-            binding.filePreviewContainer.setVisibility(View.VISIBLE);
-            binding.videoPreview.seekTo(savedPlaybackPosition);
-            if (autoplay) {
-                binding.videoPreview.start();
-            }
-            binding.mediaController.setEnabled(true);
-            binding.mediaController.updatePausePlay();
+//            binding.emptyView.emptyListView.setVisibility(View.GONE);
+//            binding.progress.setVisibility(View.GONE);
+//            binding.filePreviewContainer.setVisibility(View.VISIBLE);
+//            binding.videoPreview.seekTo(savedPlaybackPosition);
+//            if (autoplay) {
+//                binding.videoPreview.start();
+//            }
+//            binding.mediaController.setEnabled(true);
+//            binding.mediaController.updatePausePlay();
             prepared = true;
         }
 
@@ -531,9 +545,9 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
         public void onCompletion(MediaPlayer mp) {
             Log_OC.v(TAG, "completed");
             if (mp != null) {
-                binding.videoPreview.seekTo(0);
+//                binding.videoPreview.seekTo(0);
             } // else : called from onError()
-            binding.mediaController.updatePausePlay();
+//            binding.mediaController.updatePausePlay();
         }
 
         /**
@@ -546,14 +560,14 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
         @Override
         public boolean onError(MediaPlayer mp, int what, int extra) {
             Log_OC.e(TAG, "Error in video playback, what = " + what + ", extra = " + extra);
-            binding.filePreviewContainer.setVisibility(View.GONE);
-            binding.progress.setVisibility(View.GONE);
+//            binding.filePreviewContainer.setVisibility(View.GONE);
+//            binding.progress.setVisibility(View.GONE);
             final Context context = getActivity();
-            if (binding.videoPreview.getWindowToken() != null && context != null) {
-                String message = ErrorFormat.toString(context, what, extra);
-                binding.emptyView.emptyListView.setVisibility(View.VISIBLE);
-                setVideoErrorMessage(message, R.string.preview_sorry);
-            }
+//            if (binding.videoPreview.getWindowToken() != null && context != null) {
+//                String message = ErrorFormat.toString(context, what, extra);
+//                binding.emptyView.emptyListView.setVisibility(View.VISIBLE);
+//                setVideoErrorMessage(message, R.string.preview_sorry);
+//            }
             return true;
         }
 
@@ -594,7 +608,7 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        if (event.getAction() == MotionEvent.ACTION_DOWN && v.equals(binding.videoPreview)) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN && v.equals(binding.exoplayerView)) {
             // added a margin on the left to avoid interfering with gesture to open navigation drawer
             if (event.getX() / Resources.getSystem().getDisplayMetrics().density > MIN_DENSITY_RATIO) {
                 startFullScreenVideo();
@@ -608,10 +622,10 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
         Intent intent = new Intent(getActivity(), PreviewVideoActivity.class);
         intent.putExtra(FileActivity.EXTRA_ACCOUNT, user.toPlatformAccount());
         intent.putExtra(FileActivity.EXTRA_FILE, getFile());
-        intent.putExtra(PreviewVideoActivity.EXTRA_AUTOPLAY, binding.videoPreview.isPlaying());
+//        intent.putExtra(PreviewVideoActivity.EXTRA_AUTOPLAY, binding.videoPreview.isPlaying());
         intent.putExtra(PreviewVideoActivity.EXTRA_STREAM_URL, videoUri);
-        binding.videoPreview.pause();
-        intent.putExtra(PreviewVideoActivity.EXTRA_START_POSITION, binding.videoPreview.getCurrentPosition());
+//        binding.videoPreview.pause();
+//        intent.putExtra(PreviewVideoActivity.EXTRA_START_POSITION, binding.videoPreview.getCurrentPosition());
         startActivityForResult(intent, FileActivity.REQUEST_CODE__LAST_SHARED + 1);
     }
 
@@ -656,7 +670,7 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
         if (MimeTypeUtil.isAudio(file) && stopAudio) {
             mediaPlayerServiceConnection.pause();
         } else if (MimeTypeUtil.isVideo(file)) {
-            binding.videoPreview.stopPlayback();
+            exoPlayer.stop(true);
         }
     }
 
@@ -672,7 +686,7 @@ public class PreviewMediaFragment extends FileFragment implements OnTouchListene
 
     public int getPosition() {
         if (prepared) {
-            savedPlaybackPosition = binding.videoPreview.getCurrentPosition();
+//            savedPlaybackPosition = binding.videoPreview.getCurrentPosition();
         }
         Log_OC.v(TAG, "getting position: " + savedPlaybackPosition);
         return savedPlaybackPosition;

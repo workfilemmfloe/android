@@ -21,7 +21,6 @@
 package com.owncloud.android.ui.preview;
 
 import android.accounts.Account;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -30,9 +29,11 @@ import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.MediaController;
-import android.widget.VideoView;
 
-import com.nextcloud.client.media.ErrorFormat;
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.owncloud.android.R;
 import com.owncloud.android.datamodel.OCFile;
 import com.owncloud.android.lib.common.utils.Log_OC;
@@ -40,7 +41,6 @@ import com.owncloud.android.ui.activity.FileActivity;
 import com.owncloud.android.utils.MimeTypeUtil;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 
 /**
  *  Activity implementing a basic video player.
@@ -64,7 +64,7 @@ public class PreviewVideoActivity extends FileActivity implements OnCompletionLi
 
     private int mSavedPlaybackPosition;         // in the unit time handled by MediaPlayer.getCurrentPosition()
     private boolean mAutoplay;                  // when 'true', the playback starts immediately with the activity
-    private VideoView mVideoPlayer;             // view to play the file; both performs and show the playback
+    private ExoPlayer exoPlayer;             // view to play the file; both performs and show the playback
     private MediaController mMediaController;   // panel control used by the user to control the playback
     private Uri mStreamUri;
 
@@ -96,15 +96,18 @@ public class PreviewVideoActivity extends FileActivity implements OnCompletionLi
             mStreamUri = (Uri) savedInstanceState.get(EXTRA_STREAM_URL);
         }
 
-        mVideoPlayer = findViewById(R.id.videoPlayer);
+        StyledPlayerView playerView = findViewById(R.id.videoPlayer);
+        exoPlayer = new SimpleExoPlayer.Builder(this).build();
+        playerView.setPlayer(exoPlayer);
+
 
         // set listeners to get more control on the playback
-        mVideoPlayer.setOnPreparedListener(this);
-        mVideoPlayer.setOnCompletionListener(this);
-        mVideoPlayer.setOnErrorListener(this);
+//        mVideoPlayer.setOnPreparedListener(this);
+//        mVideoPlayer.setOnCompletionListener(this);
+//        mVideoPlayer.setOnErrorListener(this);
 
         // keep the screen on while the playback is performed (prevents screen off by battery save)
-        mVideoPlayer.setKeepScreenOn(true);
+//        mVideoPlayer.setKeepScreenOn(true);
 
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
@@ -117,8 +120,8 @@ public class PreviewVideoActivity extends FileActivity implements OnCompletionLi
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putInt(PreviewVideoActivity.EXTRA_START_POSITION, mVideoPlayer.getCurrentPosition());
-        outState.putBoolean(PreviewVideoActivity.EXTRA_AUTOPLAY , mVideoPlayer.isPlaying());
+//        outState.putInt(PreviewVideoActivity.EXTRA_START_POSITION, mVideoPlayer.getCurrentPosition());
+//        outState.putBoolean(PreviewVideoActivity.EXTRA_AUTOPLAY , mVideoPlayer.isPlaying());
         outState.putParcelable(PreviewVideoActivity.EXTRA_STREAM_URL, mStreamUri);
     }
 
@@ -127,8 +130,8 @@ public class PreviewVideoActivity extends FileActivity implements OnCompletionLi
     public void onBackPressed() {
         Log_OC.v(TAG, "onBackPressed");
         Intent i = new Intent();
-        i.putExtra(EXTRA_AUTOPLAY, mVideoPlayer.isPlaying());
-        i.putExtra(EXTRA_START_POSITION, mVideoPlayer.getCurrentPosition());
+//        i.putExtra(EXTRA_AUTOPLAY, mVideoPlayer.isPlaying());
+//        i.putExtra(EXTRA_START_POSITION, mVideoPlayer.getCurrentPosition());
         setResult(RESULT_OK, i);
         super.onBackPressed();
     }
@@ -144,10 +147,10 @@ public class PreviewVideoActivity extends FileActivity implements OnCompletionLi
     @Override
     public void onPrepared(MediaPlayer mp) {
         Log_OC.v(TAG, "onPrepare");
-        mVideoPlayer.seekTo(mSavedPlaybackPosition);
-        if (mAutoplay) {
-            mVideoPlayer.start();
-        }
+//        mVideoPlayer.seekTo(mSavedPlaybackPosition);
+//        if (mAutoplay) {
+//            mVideoPlayer.start();
+//        }
         mMediaController.show(5000);
     }
 
@@ -161,7 +164,7 @@ public class PreviewVideoActivity extends FileActivity implements OnCompletionLi
      */
     @Override
     public void onCompletion(MediaPlayer  mp) {
-        mVideoPlayer.seekTo(0);
+//        mVideoPlayer.seekTo(0);
     }
 
 
@@ -180,19 +183,19 @@ public class PreviewVideoActivity extends FileActivity implements OnCompletionLi
             mMediaController.hide();
         }
 
-        if (mVideoPlayer.getWindowToken() != null) {
-            String message = ErrorFormat.toString(this, what, extra);
-            new AlertDialog.Builder(this)
-                    .setMessage(message)
-                    .setPositiveButton(android.R.string.VideoView_error_button,
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int whichButton) {
-                                    PreviewVideoActivity.this.onCompletion(null);
-                                }
-                            })
-                    .setCancelable(false)
-                    .show();
-        }
+//        if (mVideoPlayer.getWindowToken() != null) {
+//            String message = ErrorFormat.toString(this, what, extra);
+//            new AlertDialog.Builder(this)
+//                    .setMessage(message)
+//                    .setPositiveButton(android.R.string.VideoView_error_button,
+//                            new DialogInterface.OnClickListener() {
+//                                public void onClick(DialogInterface dialog, int whichButton) {
+//                                    PreviewVideoActivity.this.onCompletion(null);
+//                                }
+//                            })
+//                    .setCancelable(false)
+//                    .show();
+//        }
         return true;
     }
 
@@ -211,16 +214,19 @@ public class PreviewVideoActivity extends FileActivity implements OnCompletionLi
             file = getStorageManager().getFileById(file.getFileId());
             if (file != null) {
                 if (file.isDown()) {
-                    mVideoPlayer.setVideoURI(file.getStorageUri());
+                    exoPlayer.addMediaItem(MediaItem.fromUri(file.getStorageUri()));
                 } else {
-                    mVideoPlayer.setVideoURI(mStreamUri);
+                    exoPlayer.addMediaItem(MediaItem.fromUri(mStreamUri));
                 }
+
+                exoPlayer.prepare();
+                exoPlayer.play();
 
                 // create and prepare control panel for the user
                 mMediaController = new MediaController(this);
-                mMediaController.setMediaPlayer(mVideoPlayer);
-                mMediaController.setAnchorView(mVideoPlayer);
-                mVideoPlayer.setMediaController(mMediaController);
+//                mMediaController.setMediaPlayer(mVideoPlayer);
+//                mMediaController.setAnchorView(mVideoPlayer);
+//                mVideoPlayer.setMediaController(mMediaController);
 
             } else {
                 finish();
