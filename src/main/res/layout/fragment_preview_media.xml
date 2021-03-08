@@ -20,7 +20,6 @@
 -->
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/top"
     android:layout_width="match_parent"
@@ -28,76 +27,12 @@
     android:gravity="center"
     tools:context=".ui.preview.PreviewMediaFragment">
 
-    <RelativeLayout
-        android:id="@+id/file_preview_container"
+
+    <com.google.android.exoplayer2.ui.StyledPlayerView
+        android:id="@+id/exoplayer_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="invisible"
-        android:background="@color/background_color_inverse">
-
-        <FrameLayout
-            android:id="@+id/visual_area"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_above="@+id/media_controller"
-            android:layout_alignParentTop="true">
-
-            <ImageView
-                android:id="@+id/image_preview"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:layout_margin="@dimen/standard_margin"
-                android:contentDescription="@string/preview_image_description"
-                android:src="@drawable/logo"/>
-
-            <VideoView
-                android:id="@+id/video_preview"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:visibility="gone" />
-
-        </FrameLayout>
-
-        <com.owncloud.android.media.MediaControlView
-            android:id="@id/media_controller"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_margin="@dimen/standard_margin" />
-    </RelativeLayout>
-
-    <FrameLayout
-        android:id="@+id/progress"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <com.elyeproj.loaderviewlibrary.LoaderImageView
-            android:layout_width="@dimen/empty_list_icon_layout_width"
-            android:layout_height="@dimen/empty_list_icon_layout_width"
-            android:layout_gravity="center"
-            android:contentDescription="@null"
-            app:corners="24" />
-
-        <ImageView
-            android:layout_width="@dimen/empty_list_icon_layout_width"
-            android:layout_height="@dimen/empty_list_icon_layout_height"
-            android:padding="@dimen/standard_half_padding"
-            android:layout_gravity="center"
-            android:contentDescription="@null"
-            android:src="@drawable/file_movie"
-            app:tint="@color/bg_default" />
-
-    </FrameLayout>
-
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <include
-            android:id="@+id/empty_view"
-            layout="@layout/empty_list" />
-    </FrameLayout>
+        android:layout_gravity="center" />
+    
 
 </RelativeLayout>
