@@ -29,6 +29,7 @@ import android.graphics.PorterDuff;
 import android.widget.Button;
 import android.widget.ImageButton;
 
+import com.google.android.material.button.MaterialButton;
 import com.owncloud.android.R;
 
 import androidx.annotation.ColorInt;
@@ -40,9 +41,10 @@ import androidx.core.content.ContextCompat;
  */
 public final class ThemeButtonUtils {
     /**
-     * sets the tinting of the given ImageButton's icon to color_accent.
+     * sets the tinting of the given ImageButton's icon to given color.
      *
      * @param imageButton the image button who's icon should be colored
+     * @param color       the color to be used
      */
     public static void colorImageButton(ImageButton imageButton, @ColorInt int color) {
         if (imageButton != null) {
@@ -50,19 +52,40 @@ public final class ThemeButtonUtils {
         }
     }
 
+    /**
+     * colorize primary button while taking care of edge case colors for button texts.
+     *
+     * @param button  the button to be colored
+     * @param context the context
+     */
     public static void colorPrimaryButton(Button button, Context context) {
         int primaryColor = ThemeColorUtils.primaryColor(null, true, false, context);
-        int fontColor = ThemeColorUtils.fontColor(context, false);
+        int disabledColor = ContextCompat.getColor(context, R.color.disabled_button_background);
 
-        button.setBackgroundColor(primaryColor);
-
+        int textColor;
         if (Color.BLACK == primaryColor) {
-            button.setTextColor(Color.WHITE);
+            textColor = Color.WHITE;
         } else if (Color.WHITE == primaryColor) {
-            button.setTextColor(Color.BLACK);
+            textColor = Color.BLACK;
         } else {
-            button.setTextColor(fontColor);
+            textColor = ThemeColorUtils.fontColor(context, false);
         }
+
+        button.setBackgroundTintList(getColorStateList(primaryColor, disabledColor));
+        button.setTextColor(
+            getColorStateList(textColor, ContextCompat.getColor(context, R.color.disabled_button_text))
+                           );
+    }
+
+    /**
+     * colorize secondary button.
+     *
+     * @param button  the button to be colored
+     * @param context the context
+     */
+    public static void colorSecondaryButton(MaterialButton button, Context context) {
+        button.setTextColor(ThemeColorUtils.primaryColor(context, true));
+        button.setRippleColor(getRippleColorStateList(context));
     }
 
     /**
@@ -89,18 +112,33 @@ public final class ThemeButtonUtils {
         }
         Context context = buttons[0].getContext();
         int disabledColor = ContextCompat.getColor(context, R.color.disabled_text);
-        ColorStateList colorStateList = new ColorStateList(
+        ColorStateList colorStateList =  getColorStateList(color, disabledColor);
+        for (Button button: buttons) {
+            button.setTextColor(colorStateList);
+        }
+    }
+
+    private static ColorStateList getRippleColorStateList(Context context) {
+        return new ColorStateList(
+            new int[][]{
+                new int[]{}
+            },
+            new int[]{
+                ThemeColorUtils.primaryColor(context, true)
+            }
+        );
+    }
+
+    private static ColorStateList getColorStateList(int primaryColor, int disabledColor) {
+        return new ColorStateList(
             new int[][]{
                 new int[]{android.R.attr.state_enabled}, // enabled
                 new int[]{-android.R.attr.state_enabled}, // disabled
             },
             new int[]{
-                color,
+                primaryColor,
                 disabledColor
             }
         );
-        for (Button button: buttons) {
-            button.setTextColor(colorStateList);
-        }
     }
 }

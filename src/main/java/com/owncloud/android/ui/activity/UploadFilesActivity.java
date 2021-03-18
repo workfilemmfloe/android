@@ -175,7 +175,6 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
         fileListFragment = (LocalFileListFragment) getSupportFragmentManager().findFragmentByTag("local_files_list");
 
         // Set input controllers
-        binding.uploadFilesBtnCancel.setTextColor(ThemeUtils.primaryColor(this, true));
         ThemeButtonUtils.colorSecondaryButton(binding.uploadFilesBtnCancel, this);
         binding.uploadFilesBtnCancel.setOnClickListener(this);
 
@@ -445,7 +444,7 @@ public class UploadFilesActivity extends DrawerActivity implements LocalFileList
                 preferences.setUploaderBehaviour(FileUploader.LOCAL_BEHAVIOUR_DELETE);
             } else {
                 data.putExtra(EXTRA_CHOSEN_FILES, fileListFragment.getCheckedFilePaths());
-                data.putExtra(LOCAL_BASE_PATH, mCurrentDir.getAbsolutePath());
+                data.putExtra(LOCAL_BASE_PATH, currentDir.getAbsolutePath());
 
                 // set result code
                 switch (binding.uploadFilesSpinnerBehaviour.getSelectedItemPosition()) {
